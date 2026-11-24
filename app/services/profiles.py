@@ -15,6 +15,33 @@ def get_profile(user_id):
     return res.data[0] if res.data else None
 
 
+def get_email_by_username(username):
+    """Cari email pengguna berdasarkan username untuk autentikasi."""
+    try:
+        res = (
+            admin_client()
+            .table("profiles")
+            .select("id")
+            .eq("username", username)
+            .limit(1)
+            .execute()
+        )
+
+        if not res.data:
+            return None
+
+        user_id = res.data[0]["id"]
+
+        auth_user = admin_client().auth.admin.get_user_by_id(user_id)
+        user = auth_user.user
+
+        return user.email if user else None
+
+    except Exception:
+        current_app.logger.exception("get_email_by_username failed")
+        return None
+
+
 def username_available(username):
     res = admin_client().rpc("username_available", {"p_username": username}).execute()
     return bool(res.data)

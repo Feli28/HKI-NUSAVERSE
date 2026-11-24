@@ -52,6 +52,7 @@ def _link_invalid():
         "Back to Log In", url_for("auth.login"), status=400)
 
 
+
 # ---------------------------------------------------------------- login
 @bp.route("/login", methods=["GET", "POST"])
 @limiter.limit("20 per minute", methods=["POST"])
@@ -60,50 +61,98 @@ def login():
         return redirect(url_for("main.home"))
 
     nxt = request.values.get("next", "")
-    if request.method == "GET":
-        return render_template("login.html", email="", next=nxt)
 
-    email = normalize_email(request.form.get("email"))
+    if request.method == "GET":
+        return render_template("login.html", username="", next=nxt)
+
+    username = (request.form.get("username") or "").strip()
     password = request.form.get("password") or ""
-    if not email or not password:
-        flash("Please enter your email and password.", "error")
-        return render_template("login.html", email=email, next=nxt), 400
+
+    if not username or not password:
+        flash("Please enter your username and password.", "error")
+        return render_template(
+            "login.html", username=username, next=nxt
+        ), 400
+
+    # Cari email internal berdasarkan username.
+    email = profiles.get_email_by_username(username)
+
+    if not email:
+        flash("Invalid username or password.", "error")
+        return render_template(
+            "login.html", username=username, next=nxt
+        ), 401
 
     try:
-        res = public_client().auth.sign_in_with_password({"email": email, "password": password})
+        # Supabase Auth tetap memvalidasi password.
+        res = public_client().auth.sign_in_with_password({
+            "email": email,
+            "password": password,
+        })
+
     except AuthApiError as err:
         if _is_unconfirmed(err):
-            # Password benar tetapi email belum diverifikasi -> arahkan ke halaman "Check Your Email".
-            session["pending"] = {"email": email, "uid": None, "username": None, "sent_at": 0}
+            # Akun belum verifikasi email.
+            session["pending"] = {
+                "email": email,
+                "uid": None,
+                "username": username,
+                "sent_at": 0,
+            }
             flash("Please verify your email before logging in.", "info")
             return redirect(url_for("auth.check_email"))
+
         if _is_rate_limited(err):
-            flash("Too many attempts. Please wait a moment and try again.", "error")
-            return render_template("login.html", email=email, next=nxt), 429
-        flash("Invalid email or password.", "error")
-        return render_template("login.html", email=email, next=nxt), 401
+            flash(
+                "Too many attempts. Please wait a moment and try again.",
+                "error",
+            )
+            return render_template(
+                "login.html", username=username, next=nxt
+            ), 429
+
+        flash("Invalid username or password.", "error")
+        return render_template(
+            "login.html", username=username, next=nxt
+        ), 401
+
     except Exception:
         current_app.logger.exception("login failed")
         flash(GENERIC_ERROR, "error")
-        return render_template("login.html", email=email, next=nxt), 503
+        return render_template(
+            "login.html", username=username, next=nxt
+        ), 503
 
+    # Login berhasil, ambil profil pengguna.
     user = res.user
     profile = profiles.get_profile(str(user.id)) if user else None
+
     if not profile:
-        flash("Your account isn't set up correctly. Please contact support.", "error")
-        return render_template("login.html", email=email, next=nxt), 500
+        flash(
+            "Your account isn't set up correctly. Please contact support.",
+            "error",
+        )
+        return render_template(
+            "login.html", username=username, next=nxt
+        ), 500
+
     if not profile["is_active"]:
         flash("This account has been deactivated.", "error")
-        return render_template("login.html", email=email, next=nxt), 403
+        return render_template(
+            "login.html", username=username, next=nxt
+        ), 403
 
-    session.clear()  # cegah session fixation
+    # Buat session login baru.
+    session.clear()
     session.permanent = True
     session["uid"] = profile["id"]
     session["sv"] = profile["session_version"]
+
     try:
         profiles.touch_login(profile["id"])
     except Exception:
         current_app.logger.exception("touch_login failed")
+
     return redirect(safe_next(request.form.get("next")))
 
 
