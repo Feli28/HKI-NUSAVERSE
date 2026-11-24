@@ -1,0 +1,23 @@
+{% extends "base.html" %}
+{% from "_macros.html" import field %}
+{% block title %}Sign Up · NusaVerse{% endblock %}
+{% block screen_class %}screen-center{% endblock %}
+{% block content %}
+  <h1 class="title">Sign Up</h1>
+
+  <form method="post" action="{{ url_for('auth.signup') }}" novalidate>
+    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+
+    {{ field('mail', 'email', 'email', 'Email', 'email', email) }}
+    {{ field('user', 'text', 'username', 'Username', 'username', username, maxlength=30) }}
+    {{ field('key', 'password', 'password', 'Password', 'new-password', enterkeyhint='go') }}
+    <p class="hint" style="margin-top:-6px">Minimum 8 characters</p>
+
+    <button class="btn btn-narrow" type="submit">Sign Up</button>
+  </form>
+
+  <p class="center small spaced">Already have an account?<br>
+    <a class="link" href="{{ url_for('auth.login') }}">Back to Sign In</a></p>
+
+  <p class="fineprint">By signing up, you agree that your face images will be processed to generate classification results.</p>
+{% endblock %}

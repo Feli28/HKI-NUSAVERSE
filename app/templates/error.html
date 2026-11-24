@@ -1,0 +1,9 @@
+{% extends "base.html" %}
+{% block title %}{{ title }} · NusaVerse{% endblock %}
+{% block screen_class %}screen-center{% endblock %}
+{% block content %}
+  <p class="error-code">{{ code }}</p>
+  <h1 class="title">{{ title }}</h1>
+  <p class="text">{{ text }}</p>
+  <a class="btn btn-link" href="{{ url_for('main.home') }}">Back to Home</a>
+{% endblock %}

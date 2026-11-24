@@ -1,0 +1,6 @@
+Flask>=3.0
+Flask-WTF>=1.2
+Flask-Limiter>=3.5
+supabase>=2.4        # makin baru makin baik: key baru (sb_publishable_ / sb_secret_) butuh versi terbaru
+python-dotenv>=1.0
+gunicorn>=22.0

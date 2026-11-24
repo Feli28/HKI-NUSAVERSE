@@ -1,0 +1,25 @@
+{% extends "base.html" %}
+{% block title %}Home · NusaVerse{% endblock %}
+{% block body %}
+  <header class="app-bar">
+    <img class="app-logo" src="{{ url_for('static', filename='img/logo.png') }}" alt="NusaVerse">
+    <div class="app-bar-right">
+      <span class="who">{{ g.user.username }}</span>
+      <form method="post" action="{{ url_for('auth.logout') }}">
+        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+        <button class="btn-small" type="submit">Log Out</button>
+      </form>
+    </div>
+  </header>
+
+  <main class="page">
+    {% include "_flashes.html" %}
+    <h1 class="title">Welcome, {{ g.user.username }}!</h1>
+
+    {# ===================================================================
+       Letakkan UI klasifikasi (upload / take photo / live) di sini.
+       Daftarkan blueprint prediction di app/__init__.py (lihat README).
+       =================================================================== #}
+    <div class="placeholder">Your classification page goes here.</div>
+  </main>
+{% endblock %}

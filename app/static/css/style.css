@@ -1,0 +1,214 @@
+/* =====================================================================
+   NusaVerse: mobile-first.
+   Di HP tampil full-screen; di layar lebar tampil sebagai "bingkai HP" 430px.
+   ===================================================================== */
+:root {
+  --bg: #FFF8EF;          /* latar semua layar */
+  --bg-outer: #EADBC9;    /* latar di luar bingkai HP (desktop) */
+  --brand: #D97963;       /* tombol */
+  --brand-dark: #C5654F;
+  --ink: #4A2420;
+  --title: #5B2625;
+  --muted: #7A5B55;
+  --icon-bg: #F0E3D3;     /* kotak ikon di kiri input */
+  --line: #E7D9CB;
+  --white: #FFFFFF;
+}
+
+* { box-sizing: border-box; }
+
+html { -webkit-text-size-adjust: 100%; text-size-adjust: 100%; }
+
+body {
+  margin: 0;
+  background: var(--bg);
+  color: var(--ink);
+  font-family: "Poppins", system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+  font-size: 14px;
+  line-height: 1.55;
+  -webkit-font-smoothing: antialiased;
+  -webkit-tap-highlight-color: transparent;
+}
+
+button, a, input { touch-action: manipulation; }
+
+/* ---------- bingkai perangkat ---------- */
+.device {
+  display: flex;
+  flex-direction: column;
+  width: 100%;
+  min-height: 100vh;
+  min-height: 100dvh;
+  background: var(--bg);
+}
+
+@media (min-width: 600px) {
+  body { background: var(--bg-outer); }
+  .device {
+    width: 430px;
+    margin: 24px auto;
+    min-height: min(880px, calc(100dvh - 48px));
+    border-radius: 36px;
+    overflow: hidden;
+    box-shadow: 0 24px 60px rgba(88, 46, 36, .18), 0 0 0 1px rgba(88, 46, 36, .06);
+  }
+}
+
+/* ---------- layar ---------- */
+.screen {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  padding: max(32px, env(safe-area-inset-top)) clamp(24px, 8.5vw, 40px) max(32px, env(safe-area-inset-bottom));
+}
+.screen-center { justify-content: center; }
+
+.logo { display: block; width: 190px; max-width: 70%; height: auto; margin: 0 auto 38px; }
+
+.title {
+  margin: 0 0 22px;
+  font-size: clamp(1.6rem, 7.4vw, 2rem);
+  font-weight: 700;
+  line-height: 1.2;
+  color: var(--title);
+}
+.title-md { font-size: clamp(1.3rem, 6.3vw, 1.75rem); }
+
+.text { margin: 0 0 20px; color: var(--ink); font-size: 14px; }
+.sent-to { margin: 0 0 14px; font-weight: 600; word-break: break-all; }
+.hint { margin: 8px 0 0; font-size: 12px; color: var(--muted); }
+.fineprint { margin: 26px 0 0; font-size: 11px; line-height: 1.5; color: var(--muted); text-align: center; }
+.divider { border: 0; border-top: 1px solid var(--line); margin: 20px 0; }
+
+.left { text-align: left; }
+.center { text-align: center; }
+.small { font-size: 13px; }
+.spaced { margin-top: 26px; }
+.spaced-top { margin-top: 26px; }
+.alt { margin: 26px 0 0; font-size: 13px; color: var(--muted); font-weight: 300; }
+
+/* ---------- input dengan kotak ikon (login / sign up) ---------- */
+.field {
+  display: flex;
+  align-items: stretch;
+  height: 48px;                      /* target sentuh >= 44px */
+  margin-bottom: 16px;
+  background: var(--white);
+  border-radius: 10px;
+  overflow: hidden;
+  box-shadow: 0 0 0 2px transparent;
+  transition: box-shadow .15s;
+}
+.field:focus-within { box-shadow: 0 0 0 2px var(--brand); }
+
+.field-icon {
+  flex: 0 0 44px;
+  display: grid;
+  place-items: center;
+  background: var(--icon-bg);
+  color: #000;
+}
+.field-icon svg { width: 22px; height: 22px; }
+
+.field input {
+  flex: 1;
+  min-width: 0;
+  border: 0;
+  outline: 0;
+  padding: 0 12px;
+  background: var(--white);
+  color: #111;
+  font: inherit;
+  font-size: 16px;                   /* 16px mencegah auto-zoom di iOS Safari */
+}
+.field input::placeholder { color: #222; opacity: 1; }
+
+/* ---------- input dengan label di atas (forgot / new password) ---------- */
+.form-row { margin-bottom: 20px; }
+.label { display: block; margin: 0 0 6px; font-size: 13px; font-weight: 600; color: var(--ink); }
+.input {
+  display: block;
+  width: 100%;
+  height: 48px;
+  padding: 0 14px;
+  border: 0;
+  outline: 0;
+  border-radius: 10px;
+  background: var(--white);
+  color: #111;
+  font: inherit;
+  font-size: 16px;
+  box-shadow: 0 0 0 2px transparent;
+  transition: box-shadow .15s;
+}
+.input:focus { box-shadow: 0 0 0 2px var(--brand); }
+
+/* ---------- tombol & tautan ---------- */
+.btn {
+  display: block;
+  width: 100%;
+  height: 48px;
+  margin-top: 22px;
+  border: 0;
+  border-radius: 10px;
+  background: var(--brand);
+  color: #fff;
+  font: inherit;
+  font-size: 15px;
+  cursor: pointer;
+  transition: background .15s;
+}
+.btn:hover:not(:disabled) { background: var(--brand-dark); }
+.btn:active:not(:disabled) { background: var(--brand-dark); transform: translateY(1px); }
+.btn:disabled { opacity: .6; cursor: not-allowed; }
+.btn-narrow { width: 76%; margin-left: auto; margin-right: auto; }   /* tombol sempit di tengah, sesuai desain */
+.btn-inline { margin-top: 6px; }
+.btn-link { display: flex; align-items: center; justify-content: center; text-decoration: none; margin-top: 10px; }
+
+.link, .link-btn, .link-strong {
+  color: var(--ink);
+  text-decoration: underline;
+  text-underline-offset: 2px;
+  font-size: 13px;
+}
+.link-strong { font-weight: 600; }
+.link-btn { background: none; border: 0; padding: 6px 0; font-family: inherit; cursor: pointer; }
+.plain { color: var(--ink); text-decoration: none; font-weight: 300; display: inline-block; padding: 6px 0; }
+.plain:hover, .link:hover, .link-btn:hover, .link-strong:hover { color: var(--brand-dark); }
+
+/* ---------- pesan flash ---------- */
+.flashes { margin-bottom: 18px; }
+.flash { padding: 10px 14px; margin-bottom: 8px; border-radius: 8px; font-size: 13px; line-height: 1.45; }
+.flash-error   { background: #FCE4DE; color: #8A2D1F; border: 1px solid #F1B8AB; }
+.flash-success { background: #E6F2E4; color: #2E6B38; border: 1px solid #B9D9B5; }
+.flash-info    { background: var(--icon-bg); color: var(--title); border: 1px solid #E2CFBC; }
+
+.error-code { margin: 0 0 4px; font-size: 14px; letter-spacing: 3px; color: var(--brand); font-weight: 600; }
+
+/* ---------- halaman setelah login ---------- */
+.app-bar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: max(12px, env(safe-area-inset-top)) 20px 12px;
+  border-bottom: 1px solid var(--line);
+}
+.app-logo { height: 44px; width: auto; }
+.app-bar-right { display: flex; align-items: center; gap: 10px; min-width: 0; }
+.who { font-weight: 500; font-size: 13px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; max-width: 120px; }
+.btn-small {
+  height: 36px; border: 0; border-radius: 8px; padding: 0 14px;
+  background: var(--brand); color: #fff; font: inherit; font-size: 13px; cursor: pointer;
+}
+.btn-small:hover { background: var(--brand-dark); }
+
+.page { flex: 1; padding: 24px 20px max(40px, env(safe-area-inset-bottom)); }
+.page .title { font-size: 1.5rem; }
+.placeholder {
+  border: 2px dashed #E0CDBB;
+  border-radius: 14px;
+  padding: 70px 20px;
+  text-align: center;
+  color: var(--muted);
+}

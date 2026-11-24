@@ -1,0 +1,45 @@
+{% extends "base.html" %}
+{% block title %}Check Your Email · NusaVerse{% endblock %}
+{% block screen_class %}screen-center{% endblock %}
+{% block content %}
+  <h1 class="title">Check Your Email</h1>
+
+  <p class="text" style="margin-bottom:6px">Verification link sent to:</p>
+  <p class="sent-to">{{ email }}</p>
+
+  <p class="text">Please check your inbox or spam folder. The verification link is valid for {{ verify_minutes }} minutes.</p>
+
+  <hr class="divider">
+
+  <p class="text" style="margin-bottom:8px">Didn't receive the email?</p>
+  <form method="post" action="{{ url_for('auth.resend') }}">
+    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+    <button class="btn btn-narrow btn-inline" id="resend-btn" type="submit" data-cooldown="{{ cooldown }}"
+            {% if cooldown %}disabled{% endif %}>Resend Verification</button>
+  </form>
+
+  <p class="text spaced-top" style="margin-bottom:2px">Want to use a different email address?</p>
+  <form method="post" action="{{ url_for('auth.signup_cancel') }}">
+    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+    <button class="link-btn link-strong" type="submit">Back to Sign Up</button>
+  </form>
+{% endblock %}
+
+{% block scripts %}
+<script>
+  (function () {
+    var btn = document.getElementById("resend-btn");
+    if (!btn) return;
+    var left = parseInt(btn.dataset.cooldown, 10) || 0;
+    if (left <= 0) return;
+    var label = "Resend Verification";
+    function tick() {
+      if (left <= 0) { btn.disabled = false; btn.textContent = label; return; }
+      btn.textContent = label + " (" + left + "s)";
+      left -= 1;
+      setTimeout(tick, 1000);
+    }
+    tick();
+  })();
+</script>
+{% endblock %}
