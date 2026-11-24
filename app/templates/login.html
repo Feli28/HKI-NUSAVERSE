@@ -16,7 +16,7 @@
     <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
     <input type="hidden" name="next" value="{{ next }}">
 
-    {{ field('user', 'username', 'text', 'Username', 'username', username) }}
+    {{ field('user', 'text', 'username', 'Username', 'username', username) }}
     {{ field('key', 'password', 'password', 'Password', 'current-password', enterkeyhint='go') }}
 
     <button class="btn" type="submit">Log In</button>
