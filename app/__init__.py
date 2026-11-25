@@ -1,10 +1,18 @@
-from flask import Flask, g, render_template, request, session
+from datetime import datetime, timedelta, timezone
+
+from flask import Flask, g, jsonify, render_template, request, session
 from flask_wtf.csrf import CSRFError
 from werkzeug.middleware.proxy_fix import ProxyFix
 
 from .config import Config
 from .extensions import csrf, limiter
 from .services import profiles
+
+try:
+    from zoneinfo import ZoneInfo
+    WIB = ZoneInfo("Asia/Jakarta")
+except Exception:  # tzdata tidak terpasang (mis. Windows tanpa paket tzdata)
+    WIB = timezone(timedelta(hours=7))
 
 
 def create_app():
@@ -17,15 +25,19 @@ def create_app():
     csrf.init_app(app)
     limiter.init_app(app)
 
+    from .blueprints.account import bp as account_bp
+    from .blueprints.admin import bp as admin_bp
     from .blueprints.auth import bp as auth_bp
+    from .blueprints.detect import bp as detect_bp
+    from .blueprints.history import bp as history_bp
     from .blueprints.main import bp as main_bp
 
     app.register_blueprint(auth_bp)
     app.register_blueprint(main_bp)
-    # Tambahkan blueprint lain (mis. prediction) di sini:
-    # from .blueprints.prediction import bp as prediction_bp
-    # app.register_blueprint(prediction_bp)
-
+    app.register_blueprint(account_bp)
+    app.register_blueprint(history_bp)
+    app.register_blueprint(detect_bp)
+    app.register_blueprint(admin_bp)
     @app.before_request
     def load_user():
         g.user = None
@@ -41,6 +53,27 @@ def create_app():
         else:
             session.clear()
 
+    def _parse(value):
+        return datetime.fromisoformat(str(value).replace("Z", "+00:00"))
+
+    @app.template_filter("dt")
+    def fmt_datetime(value):
+        """'2026-11-12T07:30:00+00:00' -> '12 Nov 2026, 14:30' (WIB)."""
+        if not value:
+            return "Never"
+        try:
+            return _parse(value).astimezone(WIB).strftime("%d %b %Y, %H:%M")
+        except ValueError:
+            return str(value)
+
+    @app.template_filter("dshort")
+    def fmt_day(value):
+        """'2026-11-12' -> '12 Nov'."""
+        try:
+            return datetime.strptime(str(value)[:10], "%Y-%m-%d").strftime("%d %b")
+        except ValueError:
+            return str(value)
+
     @app.context_processor
     def inject_globals():
         return {"verify_minutes": app.config["VERIFY_LINK_MINUTES"]}
@@ -55,7 +88,13 @@ def create_app():
         return resp
 
     def _error(code, title, text):
+        if request.path.startswith("/api/"):          # API selalu membalas JSON
+            return jsonify(status="error", message=text), code
         return render_template("error.html", code=code, title=title, text=text), code
+
+    @app.errorhandler(413)
+    def too_large(_):
+        return _error(413, "Photo Too Large", "The photo is too large (maximum 5 MB).")
 
     @app.errorhandler(CSRFError)
     def csrf_failed(_):
@@ -72,5 +111,9 @@ def create_app():
     @app.errorhandler(429)
     def too_many(_):
         return _error(429, "Too Many Requests", "Please slow down and try again in a moment.")
+
+    if app.config["PRELOAD_MODEL"]:
+        from .services import detector
+        detector.start_preload(app)      # muat model di thread latar saat server menyala
 
     return app

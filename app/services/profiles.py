@@ -15,33 +15,6 @@ def get_profile(user_id):
     return res.data[0] if res.data else None
 
 
-def get_email_by_username(username):
-    """Cari email pengguna berdasarkan username untuk autentikasi."""
-    try:
-        res = (
-            admin_client()
-            .table("profiles")
-            .select("id")
-            .eq("username", username)
-            .limit(1)
-            .execute()
-        )
-
-        if not res.data:
-            return None
-
-        user_id = res.data[0]["id"]
-
-        auth_user = admin_client().auth.admin.get_user_by_id(user_id)
-        user = auth_user.user
-
-        return user.email if user else None
-
-    except Exception:
-        current_app.logger.exception("get_email_by_username failed")
-        return None
-
-
 def username_available(username):
     res = admin_client().rpc("username_available", {"p_username": username}).execute()
     return bool(res.data)
@@ -54,16 +27,50 @@ def touch_login(user_id):
 
 
 def bump_session_version(user_id):
-    """Matikan semua sesi lama milik user (dipanggil setelah password diganti)."""
+    """Matikan semua sesi lama milik user. Mengembalikan versi baru."""
     profile = get_profile(user_id)
-    if profile:
-        admin_client().table("profiles").update(
-            {"session_version": profile["session_version"] + 1}
-        ).eq("id", user_id).execute()
+    if not profile:
+        return None
+    new_version = profile["session_version"] + 1
+    admin_client().table("profiles").update({"session_version": new_version}).eq("id", user_id).execute()
+    return new_version
 
 
 def set_password(user_id, new_password):
     admin_client().auth.admin.update_user_by_id(user_id, {"password": new_password})
+
+
+def get_email(user_id):
+    user = admin_client().auth.admin.get_user_by_id(user_id).user
+    return getattr(user, "email", None) if user else None
+
+
+# ---------------------------------------------------------------- manajemen akun (admin)
+def list_profiles(q="", page=1, per_page=15):
+    qb = admin_client().table("profiles").select(
+        "id,username,role,is_active,created_at,last_login_at", count="exact")
+    if q:
+        qb = qb.ilike("username", f"%{q}%")   # q sudah dibersihkan ke [A-Za-z0-9_.]
+    start = (page - 1) * per_page
+    res = qb.order("created_at", desc=True).range(start, start + per_page - 1).execute()
+    return res.data, (res.count or 0)
+
+
+def set_active(user_id, active):
+    admin_client().table("profiles").update({"is_active": active}).eq("id", user_id).execute()
+
+
+def set_role(user_id, role):
+    admin_client().table("profiles").update({"role": role}).eq("id", user_id).execute()
+
+
+def find_by_username(username):
+    """Cari persis (tidak peka huruf besar/kecil)."""
+    res = admin_client().table("profiles").select("*").ilike("username", username).execute()
+    for row in res.data or []:
+        if row["username"].lower() == username.lower():
+            return row
+    return None
 
 
 def discard_unconfirmed(user_id, username):

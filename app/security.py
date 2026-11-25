@@ -1,7 +1,7 @@
 import re
 from functools import wraps
 
-from flask import abort, g, redirect, request, url_for
+from flask import abort, flash, g, redirect, request, url_for
 
 EMAIL_RE = re.compile(r"^[^@\s]+@[^@\s]+\.[^@\s]{2,}$")
 USERNAME_RE = re.compile(r"^[A-Za-z0-9_.]{3,30}$")
@@ -57,6 +57,19 @@ def admin_required(f):
     def wrapper(*args, **kwargs):
         if g.user["role"] != "admin":
             abort(403)
+        return f(*args, **kwargs)
+
+    return wrapper
+
+
+def user_only(f):
+    """Halaman khusus role 'user' (riwayat pribadi & feedback). Admin hanya melihat statistik agregat."""
+    @wraps(f)
+    @login_required
+    def wrapper(*args, **kwargs):
+        if g.user["role"] != "user":
+            flash("Admins can only view aggregate statistics.", "info")
+            return redirect(url_for("admin.dashboard"))
         return f(*args, **kwargs)
 
     return wrapper

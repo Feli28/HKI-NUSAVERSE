@@ -1,6 +1,7 @@
-from flask import Blueprint, jsonify, render_template, url_for
+from flask import Blueprint, current_app, jsonify, render_template, url_for
 
 from ..security import login_required
+from ..services import models
 
 bp = Blueprint("main", __name__)
 
@@ -8,7 +9,12 @@ bp = Blueprint("main", __name__)
 @bp.get("/")
 @login_required
 def home():
-    return render_template("home.html")
+    try:
+        model = models.get_active_model()
+    except Exception:
+        current_app.logger.exception("could not load active model")
+        model = None
+    return render_template("home.html", model=model)
 
 
 @bp.get("/manifest.webmanifest")

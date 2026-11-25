@@ -1,36 +1,32 @@
 from flask import current_app
 from supabase import create_client
 
-try:
+try:  # nama modul berbeda antar versi supabase-py
     from supabase import AuthApiError
-except ImportError:
+except ImportError:  # pragma: no cover
     from gotrue.errors import AuthApiError
 
 __all__ = ["AuthApiError", "public_client", "admin_client"]
 
 
 def public_client():
-    """Client menggunakan publishable key untuk operasi Auth."""
-    cfg = current_app.config
+    """Client baru (publishable key) untuk setiap operasi auth.
 
-    return create_client(
-        cfg["SUPABASE_URL"],
-        cfg["SUPABASE_PUBLISHABLE_KEY"],
-    )
+    Jangan dipakai ulang: sign_in / verify_otp menyimpan sesi pengguna di dalam client,
+    dan itu tidak boleh bocor ke request pengguna lain.
+    """
+    cfg = current_app.config
+    return create_client(cfg["SUPABASE_URL"], cfg["SUPABASE_PUBLISHABLE_KEY"])
 
 
 _admin = None
 
 
 def admin_client():
-    """Client server menggunakan secret key untuk operasi admin."""
+    """Client server (secret key, melewati RLS). Hanya untuk query tabel dan auth.admin.*.
+    Jangan pernah memanggil sign_in / verify_otp di client ini."""
     global _admin
-
     if _admin is None:
         cfg = current_app.config
-        _admin = create_client(
-            cfg["SUPABASE_URL"],
-            cfg["SUPABASE_SECRET_KEY"],
-        )
-
+        _admin = create_client(cfg["SUPABASE_URL"], cfg["SUPABASE_SECRET_KEY"])
     return _admin
